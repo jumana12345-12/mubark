@@ -1,338 +1,141 @@
-import React, { useState } from 'react';
-import { 
-  Activity, Brain, Heart, Wind, Droplets, Utensils, ShieldAlert, Pill, 
-  Stethoscope, Info, Target, Shield, Leaf, Filter, Layers, Database 
-} from 'lucide-react';
-
-// Data for Human Organs (Expanded and highly detailed)
-const organsData = [
-  {
-    id: 'brain',
-    name: 'الدماغ',
-    icon: <Brain className="w-5 h-5" />,
-    position: { top: '8%', left: '50%' },
-    color: 'bg-purple-500',
-    function: 'مركز التحكم الرئيسي في الجهاز العصبي. يتلقى ويعالج المعلومات الحسية، ويتحكم في الحركات الإرادية واللاإرادية، وينظم العواطف، الذاكرة، التفكير، بالإضافة إلى تنظيم الوظائف الحيوية كالتنفس.',
-    diseases: ['مرض الزهايمر', 'السكتة الدماغية', 'الصداع النصفي', 'مرض باركنسون', 'الصرع'],
-    treatment: 'الأدوية العصبية، العلاج الطبيعي والتأهيلي، الجراحة (للأورام أو النزيف). الوقاية تشمل الغذاء الصحي، وتنشيط العقل المستمر، وممارسة الرياضة بانتظام.'
-  },
-  {
-    id: 'thyroid',
-    name: 'الغدة الدرقية',
-    icon: <Target className="w-5 h-5" />,
-    position: { top: '16%', left: '50%' },
-    color: 'bg-fuchsia-500',
-    function: 'غدة صماء تشبه الفراشة تقع في مقدمة الرقبة. تفرز هرمونات (مثل الثيروكسين) التي تتحكم بشكل مباشر في عمليات الأيض (التمثيل الغذائي)، نمو الجسم، معدل ضربات القلب، وتنظيم درجة حرارة الجسم.',
-    diseases: ['خمول الغدة الدرقية', 'فرط نشاط الغدة الدرقية', 'تضخم الغدة الدرقية (الجويتر)', 'أورام الغدة الدرقية'],
-    treatment: 'يتم العلاج عبر الأدوية البديلة للهرمونات (في حالة الخمول)، أو الأدوية المثبطة، أو اليود المشع، وفي بعض الحالات يتم اللجوء للاستئصال الجراحي.'
-  },
-  {
-    id: 'lungs',
-    name: 'الرئتان',
-    icon: <Wind className="w-5 h-5" />,
-    position: { top: '26%', left: '50%' },
-    color: 'bg-sky-400',
-    function: 'العضو الرئيسي في الجهاز التنفسي. وظيفتها الأساسية هي التبادل الغازي؛ إدخال الأكسجين من الهواء الخارجي إلى مجرى الدم، وطرد غاز ثاني أكسيد الكربون (فضلات الخلايا) من الدم إلى الخارج عن طريق الزفير.',
-    diseases: ['الربو', 'الانسداد الرئوي المزمن (COPD)', 'الالتهاب الرئوي', 'سرطان الرئة'],
-    treatment: 'البخاخات الموسعة للشعب الهوائية، الكورتيزون (لتقليل الالتهاب)، العلاج بالأكسجين، والإقلاع الفوري والنهائي عن التدخين بجميع أنواعه.'
-  },
-  {
-    id: 'heart',
-    name: 'القلب',
-    icon: <Heart className="w-5 h-5" />,
-    position: { top: '29%', left: '53%' }, // Anatomically slightly left (screen right)
-    color: 'bg-red-500',
-    function: 'عضلة تعمل كمضخة رئيسية لتدفق الدم في جميع أنحاء الجسم. يوصل الأكسجين والمواد المغذية إلى الخلايا عبر الأوعية الدموية، ويحمل الفضلات بعيداً عنها.',
-    diseases: ['أمراض الشرايين التاجية', 'عدم انتظام ضربات القلب', 'فشل عضلة القلب', 'ارتفاع ضغط الدم'],
-    treatment: 'الأدوية (مسيلات الدم وحاصرات بيتا)، الإجراءات الجراحية (القسطرة والدعامات)، وتغيير نمط الحياة (حمية، رياضة، إقلاع عن التدخين).'
-  },
-  {
-    id: 'liver',
-    name: 'الكبد',
-    icon: <Activity className="w-5 h-5" />,
-    position: { top: '37%', left: '44%' }, // Anatomically right (screen left)
-    color: 'bg-amber-600',
-    function: 'أكبر عضو داخلي، ينقي الدم من السموم والأدوية، ينتج العصارة الصفراوية لهضم الدهون، يخزن الجليكوجين للطاقة، ويصنع البروتينات اللازمة لتخثر الدم.',
-    diseases: ['التهاب الكبد الفيروسي (A, B, C)', 'تليف الكبد', 'الكبد الدهني', 'سرطان الكبد'],
-    treatment: 'الأدوية المضادة للفيروسات، تغيير النظام الغذائي، تجنب السموم، وقد يتطلب الأمر زراعة كبد في الحالات المتقدمة.'
-  },
-  {
-    id: 'stomach',
-    name: 'المعدة',
-    icon: <Utensils className="w-5 h-5" />,
-    position: { top: '39%', left: '55%' }, // Anatomically left (screen right)
-    color: 'bg-orange-400',
-    function: 'تستقبل الطعام وتقوم بهضمه ميكانيكياً وكيميائياً بإفراز حمض الهيدروكلوريك والإنزيمات لتحويله إلى مزيج سائل يسمى "الكيموس".',
-    diseases: ['قرحة المعدة', 'الارتجاع المريئي (GERD)', 'جرثومة المعدة', 'عسر الهضم'],
-    treatment: 'الأدوية المثبطة للحموضة، المضادات الحيوية (لجرثومة المعدة). يُنصح بتناول وجبات صغيرة وتجنب الأطعمة الحارة والمقليات.'
-  },
-  {
-    id: 'gallbladder',
-    name: 'المرارة',
-    icon: <Droplets className="w-5 h-5" />,
-    position: { top: '42%', left: '46%' }, // Under the liver (screen left)
-    color: 'bg-yellow-500',
-    function: 'كيس كمثري الشكل يقع أسفل الكبد. وظيفتها تخزين وتركيز العصارة الصفراوية التي ينتجها الكبد، ثم إطلاقها في الأمعاء الدقيقة للمساعدة في هضم وامتصاص الدهون.',
-    diseases: ['حصوات المرارة', 'التهاب المرارة الحاد', 'التهاب القنوات الصفراوية'],
-    treatment: 'الاعتماد على حمية قليلة الدهون، الأدوية المذيبة للحصوات (نادرًا)، والعلاج الأكثر شيوعاً هو الاستئصال الجراحي للمرارة (غالباً بالمنظار).'
-  },
-  {
-    id: 'spleen',
-    name: 'الطحال',
-    icon: <Shield className="w-5 h-5" />,
-    position: { top: '41%', left: '60%' }, // Far anatomical left (screen right)
-    color: 'bg-rose-800',
-    function: 'عضو حيوي يعمل كفلتر أساسي للدم؛ يقوم بتنقية وتكسير خلايا الدم الحمراء القديمة والتالفة، ويلعب دوراً مناعياً هاماً عبر إنتاج خلايا الدم البيضاء وتخزين الدم.',
-    diseases: ['تضخم الطحال', 'تمزق الطحال (بسبب الحوادث)', 'فقر الدم المنجلي (يؤثر عليه)'],
-    treatment: 'علاج المسبب الرئيسي للتضخم، وفي حالات التمزق الشديد أو الأمراض المستعصية يتم اللجوء إلى عملية استئصال الطحال الجراحية.'
-  },
-  {
-    id: 'pancreas',
-    name: 'البنكرياس',
-    icon: <Leaf className="w-5 h-5" />,
-    position: { top: '44%', left: '53%' }, // Behind stomach
-    color: 'bg-emerald-400',
-    function: 'غدة مزدوجة الوظيفة؛ تفرز إنزيمات هاضمة في الأمعاء الدقيقة للمساعدة في الهضم، وتفرز هرمونات بالغة الأهمية (مثل الإنسولين والجلوكاجون) مباشرة في الدم لتنظيم مستويات السكر.',
-    diseases: ['داء السكري (النوع الأول والثاني)', 'التهاب البنكرياس الحاد والمزمن', 'سرطان البنكرياس'],
-    treatment: 'حقن الإنسولين أو الأدوية المنظمة للسكر، تعديل جذري للنظام الغذائي، المكملات الإنزيمية، والمسكنات في حالات التهاب.'
-  },
-  {
-    id: 'kidneys',
-    name: 'الكليتان',
-    icon: <Filter className="w-5 h-5" />,
-    position: { top: '45%', left: '50%' }, // Raised to the middle
-    color: 'bg-teal-500',
-    function: 'محطة تنقية وتصفية للدم. تزيل الفضلات والسموم وتحولها لبول. تنظم ضغط الدم، تحافظ على توازن الأملاح، وتحفز إنتاج خلايا الدم الحمراء.',
-    diseases: ['حصوات الكلى', 'الفشل الكلوي', 'التهاب حوض الكلى', 'تكيس الكلى'],
-    treatment: 'شرب كميات كافية من الماء، مفتتات الحصى، وفي الفشل الكلوي يتم اللجوء للغسيل الكلوي أو زراعة الكلى.'
-  },
-  {
-    id: 'intestines',
-    name: 'الأمعاء',
-    icon: <Layers className="w-5 h-5" />,
-    position: { top: '48%', left: '50%' }, // Raised closer to the middle
-    color: 'bg-lime-500',
-    function: 'الأمعاء الدقيقة تمتص معظم العناصر الغذائية إلى الدم. بينما الأمعاء الغليظة (القولون) تمتص الماء المتبقي وتشكل الفضلات الصلبة للتخلص منها.',
-    diseases: ['متلازمة القولون العصبي', 'داء كرون', 'التهاب القولون التقرحي', 'الداء البطني'],
-    treatment: 'تعديل النظام الغذائي (زيادة الألياف)، الأدوية المضادة للتشنج والمثبطة للمناعة، والجراحة في الحالات النادرة.'
-  },
-  {
-    id: 'bladder',
-    name: 'المثانة',
-    icon: <Database className="w-5 h-5" />,
-    position: { top: '65%', left: '50%' }, // Lower pelvis
-    color: 'bg-indigo-400',
-    function: 'عضو عضلي مجوف ومرن يقع في الحوض. وظيفته الأساسية استقبال وتخزين البول القادم من الكليتين (عبر الحالبين) حتى يصبح الجسم مستعداً للتخلص منه إرادياً.',
-    diseases: ['التهاب المثانة (عدوى المسالك)', 'سلس البول', 'فرط نشاط المثانة', 'حصوات المثانة'],
-    treatment: 'المضادات الحيوية (للالتهابات)، أدوية ترخية عضلات المثانة، تمارين كيجل لتقوية عضلات الحوض، وتقليل تناول الكافيين.'
-  }
-];
-
-export default function App() {
-  const [selectedOrgan, setSelectedOrgan] = useState(organsData[0]);
-
-  return (
-    <div dir="rtl" className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-200">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg text-white shadow-md">
-              <Activity className="w-6 h-6" />
-            </div>
-            <div>
-              {/* Updated Project Name */}
-              <h1 className="text-2xl font-bold text-slate-900">مشروع مبارك الشريف</h1>
-              <p className="text-sm text-slate-500 hidden sm:block">موسوعة تفاعلية دقيقة لـ 12 عضواً حيوياً</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left Column: Interactive Body Map & Quick Links */}
-          <div className="lg:col-span-5 flex flex-col md:flex-row lg:flex-col gap-4">
-            
-            {/* Body Map Container */}
-            <div className="flex-1 flex flex-col items-center bg-white rounded-3xl p-4 shadow-sm border border-slate-100 relative overflow-hidden">
-              <h2 className="text-sm font-semibold text-slate-500 mb-4 w-full flex items-center justify-center gap-2">
-                <Stethoscope className="w-4 h-4 text-blue-500" />
-                اضغط على العضو في المجسم
-              </h2>
-              
-              <div className="relative w-full max-w-[280px] aspect-[1/2.5] flex justify-center items-center">
-                
-                {/* Realistic Human Silhouette SVG Path */}
-                <svg viewBox="0 0 200 500" className="w-full h-full text-slate-200 drop-shadow-xl opacity-90 transition-all duration-300">
-                  <defs>
-                    <linearGradient id="bodyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#e2e8f0" />
-                      <stop offset="100%" stopColor="#cbd5e1" />
-                    </linearGradient>
-                  </defs>
-                  {/* Detailed human body outline */}
-                  <path 
-                    fill="url(#bodyGradient)" 
-                    d="M100,15 C85,15 78,28 78,42 C78,54 83,62 88,68 C84,72 75,76 60,82 C40,90 28,105 24,125 C20,150 18,190 22,230 C25,250 32,250 35,240 C38,230 42,170 45,150 C45,150 48,240 50,280 C54,340 60,420 64,460 C68,485 82,490 85,465 C88,440 92,350 96,290 C98,270 102,270 104,290 C108,350 112,440 115,465 C118,490 132,485 136,460 C140,420 146,340 150,280 C152,240 155,150 155,150 C158,170 162,230 165,240 C168,250 175,250 178,230 C182,190 180,150 176,125 C172,105 160,90 140,82 C125,76 116,72 112,68 C117,62 122,54 122,42 C122,28 115,15 100,15 Z" 
-                  />
-                </svg>
-
-                {/* Interactive Organ Pins */}
-                {organsData.map((organ) => {
-                  const isSelected = selectedOrgan?.id === organ.id;
-                  return (
-                    <button
-                      key={organ.id}
-                      onClick={() => setSelectedOrgan(organ)}
-                      className={`absolute flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2 group transition-all duration-300 ${
-                        isSelected ? 'scale-125 z-20' : 'hover:scale-110 z-10'
-                      }`}
-                      style={{ top: organ.position.top, left: organ.position.left }}
-                      aria-label={`عرض معلومات ${organ.name}`}
-                    >
-                      {/* Pulse effect */}
-                      {isSelected && (
-                        <span className={`absolute inline-flex h-full w-full rounded-full opacity-50 animate-ping ${organ.color}`} />
-                      )}
-                      
-                      {/* Main Dot */}
-                      <span className={`relative flex items-center justify-center w-8 h-8 rounded-full text-white shadow-md border-[1.5px] ${
-                        isSelected ? 'border-white ring-4 ring-blue-100 shadow-xl' : 'border-white/80 opacity-90 hover:opacity-100'
-                      } ${organ.color} transition-all duration-200`}>
-                        {React.cloneElement(organ.icon, { className: 'w-4 h-4' })}
-                      </span>
-                      
-                      {/* Tooltip */}
-                      <span className={`absolute top-full mt-1.5 px-2 py-0.5 text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap transition-all duration-200 pointer-events-none ${
-                        isSelected 
-                          ? 'bg-slate-800 text-white opacity-100' 
-                          : 'bg-white text-slate-700 border border-slate-200 opacity-0 group-hover:opacity-100'
-                      }`}>
-                        {organ.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Quick Organ Selector Menu (Helps if dots overlap) */}
-            <div className="w-full md:w-48 lg:w-full bg-white rounded-3xl p-4 shadow-sm border border-slate-100">
-              <h3 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider text-center">الفهرس السريع</h3>
-              <div className="flex flex-row md:flex-col lg:flex-row flex-wrap gap-2 justify-center max-h-48 overflow-y-auto custom-scrollbar p-1">
-                {organsData.map((organ) => (
-                  <button
-                    key={`list-${organ.id}`}
-                    onClick={() => setSelectedOrgan(organ)}
-                    className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-full transition-colors border ${
-                      selectedOrgan?.id === organ.id 
-                        ? `${organ.color} text-white border-transparent shadow-sm` 
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                    }`}
-                  >
-                    {organ.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Right Column: Information Panel */}
-          <div className="lg:col-span-7 flex flex-col">
-            {selectedOrgan ? (
-              <div key={selectedOrgan.id} className="bg-white rounded-3xl p-6 md:p-8 shadow-lg border border-slate-100 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4">
-                
-                {/* Organ Header */}
-                <div className="flex items-center gap-4 mb-6 border-b border-slate-100 pb-6">
-                  <div className={`p-4 rounded-2xl text-white shadow-md ${selectedOrgan.color}`}>
-                    {React.cloneElement(selectedOrgan.icon, { className: 'w-10 h-10' })}
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-extrabold text-slate-900">{selectedOrgan.name}</h2>
-                    <span className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                      <Info className="w-3.5 h-3.5" />
-                      موسوعة التشريح والأمراض
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Function Section */}
-                  <section className="bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800 mb-3">
-                      <Activity className="w-5 h-5 text-emerald-500" />
-                      الوظيفة التشريحية والحيوية
-                    </h3>
-                    <p className="text-slate-600 leading-relaxed text-[1.05rem]">
-                      {selectedOrgan.function}
-                    </p>
-                  </section>
-
-                  {/* Diseases Section */}
-                  <section>
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-slate-800 mb-4">
-                      <ShieldAlert className="w-5 h-5 text-rose-500" />
-                      أبرز الأمراض والاعتلالات
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedOrgan.diseases.map((disease, idx) => (
-                        <span 
-                          key={idx} 
-                          className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-rose-50 text-rose-700 border border-rose-100 hover:bg-rose-100 transition-colors shadow-sm"
-                        >
-                          {disease}
-                        </span>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Treatment Section */}
-                  <section className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 md:p-6 rounded-2xl border border-blue-100">
-                    <h3 className="flex items-center gap-2 text-lg font-bold text-blue-900 mb-3">
-                      <Pill className="w-5 h-5 text-blue-600" />
-                      الرعاية الطبية وطرق العلاج
-                    </h3>
-                    <p className="text-slate-700 leading-relaxed text-[1.05rem]">
-                      {selectedOrgan.treatment}
-                    </p>
-                  </section>
-                </div>
-                
-                {/* Disclaimer */}
-                <div className="mt-8 pt-5 border-t border-slate-100">
-                  <p className="text-xs text-slate-400 text-center flex items-center justify-center gap-1.5">
-                    <Info className="w-3.5 h-3.5" />
-                    المعلومات الواردة للأغراض التثقيفية العامة، ويجب دائماً استشارة الطبيب المختص لأي تشخيص أو علاج.
-                  </p>
-                </div>
-
-              </div>
-            ) : null}
-          </div>
-
-        </div>
-      </main>
-
-      <style dangerouslySetInnerHTML={{__html: `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشروع مبارك الشريف - مستكشف أعضاء الجسم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            scroll-behavior: smooth;
+        }
         .custom-scrollbar::-webkit-scrollbar {
-          height: 6px;
-          width: 6px;
+            width: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
+            background: #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 4px;
+            background: #cbd5e1;
+            border-radius: 10px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
+        .organ-dot:focus {
+            outline: 3px solid #3b82f6;
+            outline-offset: 4px;
         }
-      `}} />
-    </div>
-  );
-}
+        @keyframes pulse-ring {
+            0% { transform: scale(0.33); opacity: 1; }
+            80%, 100% { opacity: 0; }
+        }
+        .active-ring::before {
+            content: '';
+            position: absolute;
+            width: 300%;
+            height: 300%;
+            border-radius: 100%;
+            background-color: currentColor;
+            animation: pulse-ring 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-xl text-white shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight">مشروع مبارك الشريف</h1>
+                    <p class="text-xs md:text-sm text-slate-500 font-medium">موسوعة الأعضاء التفاعلية الشاملة</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 md:py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Column: Map & Selector -->
+            <div class="lg:col-span-5 space-y-6">
+                
+                <!-- Body Map Card -->
+                <div class="bg-white rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col items-center relative overflow-hidden">
+                    <div class="w-full flex justify-between items-center mb-6">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            المجسم التفاعلي
+                        </span>
+                    </div>
+
+                    <div class="relative w-full max-w-[280px] aspect-[1/2.3] flex justify-center items-center">
+                        <!-- Silhouette -->
+                        <svg viewBox="0 0 200 500" class="w-full h-full text-slate-200 drop-shadow-sm opacity-90">
+                            <path fill="currentColor" d="M100,15 C85,15 78,28 78,42 C78,54 83,62 88,68 C84,72 75,76 60,82 C40,90 28,105 24,125 C20,150 18,190 22,230 C25,250 32,250 35,240 C38,230 42,170 45,150 C45,150 48,240 50,280 C54,340 60,420 64,460 C68,485 82,490 85,465 C88,440 92,350 96,290 C98,270 102,270 104,290 C108,350 112,440 115,465 C118,490 132,485 136,460 C140,420 146,340 150,280 C152,240 155,150 155,150 C158,170 162,230 165,240 C168,250 175,250 178,230 C182,190 180,150 176,125 C172,105 160,90 140,82 C125,76 116,72 112,68 C117,62 122,54 122,42 C122,28 115,15 100,15 Z" />
+                        </svg>
+
+                        <!-- Dots Container -->
+                        <div id="dots-container" class="absolute inset-0"></div>
+                    </div>
+                </div>
+
+                <!-- Desktop/Tablet Grid Selector -->
+                <div class="bg-white rounded-[2rem] p-6 shadow-lg border border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-400 mb-4 text-center">اختيار سريع للعضو</h3>
+                    <div id="quick-menu" class="flex flex-wrap gap-2 justify-center max-h-48 overflow-y-auto custom-scrollbar"></div>
+                </div>
+            </div>
+
+            <!-- Right Column: Content -->
+            <div id="info-panel" class="lg:col-span-7 space-y-6">
+                <!-- Info will be injected here -->
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const organs = [
+            { id: 'brain', name: 'الدماغ', pos: { t: '8%', l: '50%' }, color: '#a855f7', 
+              icon: '🧠', func: 'مركز التحكم الرئيسي في الجهاز العصبي. ينظم الوظائف الحيوية كالتنفس والتفكير.', 
+              diseases: ['الزهايمر', 'السكتة الدماغية', 'الصرع'], 
+              treat: 'الأدوية، العلاج الطبيعي، والوقاية بالغذاء الصحي وتنشيط العقل.' },
+            { id: 'lungs', name: 'الرئتان', pos: { t: '26%', l: '50%' }, color: '#38bdf8', 
+              icon: '🫁', func: 'تبادل الغازات؛ إدخال الأكسجين وطرد ثاني أكسيد الكربون.', 
+              diseases: ['الربو', 'الالتهاب الرئوي'], 
+              treat: 'البخاخات، الأكسجين، والابتعاد عن التدخين.' },
+            { id: 'heart', name: 'القلب', pos: { t: '29%', l: '53%' }, color: '#ef4444', 
+              icon: '❤️', func: 'مضخة الدم الرئيسية؛ يوصل الأكسجين لجميع أنحاء الجسم.', 
+              diseases: ['الشرايين التاجية', 'ضغط الدم'], 
+              treat: 'الأدوية المنظمة، القسطرة، وتغيير نمط الحياة.' },
+            { id: 'liver', name: 'الكبد', pos: { t: '37%', l: '44%' }, color: '#d97706', 
+              icon: '🧪', func: 'ينقي السموم، ينتج الصفراء، ويخزن الطاقة.', 
+              diseases: ['تليف الكبد', 'الكبد الدهني'], 
+              treat: 'الأدوية المضادة، الحمية الغذائية الصارمة.' },
+            { id: 'kidneys', name: 'الكليتان', pos: { t: '45%', l: '50%' }, color: '#14b8a6', 
+              icon: '🧼', func: 'تصفية الدم من الفضلات وتنظيم السوائل والأملاح.', 
+              diseases: ['حصوات الكلى', 'الفشل الكلوي'], 
+              treat: 'شرب الماء بكثرة، الغسيل الكلوي عند الحاجة.' },
+            { id: 'intestines', name: 'الأمعاء', pos: { t: '48%', l: '50%' }, color: '#84cc16', 
+              icon: '🌀', func: 'امتصاص العناصر الغذائية والماء والتخلص من الفضلات.', 
+              diseases: ['القولون العصبي', 'داء كرون'], 
+              treat: 'الألياف الطبيعية، الأدوية المضادة للالتهاب.' }
+        ];
+
+        let activeId = 'brain';
+
+        function init() {
+            renderDots();
+            renderMenu();
+            updatePanel();
+        }
+
+        function renderDots() {
+            const container = document.getElementById('dots-container');
+            container.innerHTML
